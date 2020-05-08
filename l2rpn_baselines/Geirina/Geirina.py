@@ -482,7 +482,7 @@ class Geirina(DoNothingAgent):
               time_step += 1
 
               #if done or time_step > total_train_step or flag_next_chronic:
-              if done or step >= 6000:
+              if done: #  or step >= 6000:
                 break
 
             # save model per episode
