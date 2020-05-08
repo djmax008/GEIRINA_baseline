@@ -63,7 +63,7 @@ class Geirina(DoNothingAgent):
                  observation_space,
                  name,
                  save_path, 
-                 n_features=420,
+                 n_features= 414, #420,
                  n_episode=1000,
                  learning_rate=1e-4,
                  gamma=0.99,
@@ -77,12 +77,21 @@ class Geirina(DoNothingAgent):
                  verbose_per_episode=1,
                  seed=22,
                  verbose=False,
+                 data_dir=".",
+                 model_name="geirina",
+                 restore=False
                  ):
         DoNothingAgent.__init__(self, action_space)
         self.do_nothing = self.action_space()
         self.name = name
         self.agent_action_space = action_space
-        self.save_path = save_path     
+        self.save_path = os.path.abspath(save_path)
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+
+        self.model_name = model_name
+        self.restore = restore
+
         self.id = set()  
         self.line_count = [0 for i in range(20)]      
 
@@ -109,7 +118,7 @@ class Geirina(DoNothingAgent):
         self.epsilon_decay_steps = 3 * n_episode // 20
 
         # Directory
-        self.data_dir = os.path.abspath('action_folder')
+        self.data_dir = os.path.abspath(data_dir)
         action_to_index_dir = os.path.join(self.data_dir, 'action_to_index_jd1.npy')
         action_dir = os.path.join(self.data_dir, 'all_actions_jd1.npy')       
 
@@ -126,9 +135,13 @@ class Geirina(DoNothingAgent):
         self.graph = tf.Graph()
 
         with self.graph.as_default():
-          self.dqn_main = DeepQNetworkDueling(learning_rate=learning_rate, n_actions=self.n_actions,
+          self.dqn_main = DeepQNetworkDueling(learning_rate=learning_rate,
+                                              n_actions=self.n_actions,
+                                              n_state=self.n_features,
                                                 scope='dqn_main')
-          self.dqn_target = DeepQNetworkDueling(learning_rate=learning_rate, n_actions=self.n_actions,
+          self.dqn_target = DeepQNetworkDueling(learning_rate=learning_rate,
+                                                n_actions=self.n_actions,
+                                              n_state=self.n_features,
                                                 scope='dqn_target')
           # Saver
           self.saver = tf.train.Saver()
@@ -255,8 +268,8 @@ class Geirina(DoNothingAgent):
         # initialize sees
         with tf.Session(config=config, graph=self.graph) as sess:
           sess.run(tf.global_variables_initializer())
-          model_name = "_model_176_step_05-06-15-53"
-          self.saver.restore(sess, self.save_path + '/{}.ckpt'.format(model_name))
+          if self.restore:
+            self.saver.restore(sess, os.path.join(self.save_path , '{}.ckpt'.format(self.model_name)))
 
           time_step = 0
           loss = 0
@@ -471,7 +484,7 @@ class Geirina(DoNothingAgent):
                 break
 
             # save model per episode
-            self.saver.save(sess, self.save_path + '/{}_model_176_step_{}.ckpt'.format(isco, self.timestamp))
+            self.saver.save(sess, os.path.join(self.save_path, '{}_{}.ckpt'.format(self.model_name, self.timestamp)))
             print('Model Saved!')
 
             # verbose episode summary
@@ -490,7 +503,7 @@ class Geirina(DoNothingAgent):
 
 
     def load(self, model_name):
-      self.saver.restore(self.sess, self.save_path + '/{}.ckpt'.format(model_name))
+      self.saver.restore(self.sess, os.path.join(self.save_path, '{}.ckpt'.format(model_name)))
       print('Model {} Loaded!'.format(model_name))
 
     def act(self, observation, reward, done=False):

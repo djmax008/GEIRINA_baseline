@@ -56,13 +56,11 @@ if __name__ == "__main__":
     """
     This is a possible implementation of the train script.
     """
-    from grid2op.MakeEnv import make, make2
-    import grid2op
-    from grid2op.VoltageControler import ControlVoltageFromFile
+    from grid2op import make
     from grid2op.Rules import AlwaysLegal
 
-
-    env = make2(dataset_path="grid2op/data/rte_case14_redisp", action_class=grid2op.Action.Action, volagecontroler_class=ControlVoltageFromFile, gamerules_class=AlwaysLegal)
+    env = make("grid2op/data/rte_case14_redisp",
+               gamerules_class=AlwaysLegal)
 
     res = train(env,
             name="Geirina",
