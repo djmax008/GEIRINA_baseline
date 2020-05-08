@@ -40,7 +40,7 @@ def train(env,
     baseline = Geirina(env.action_space,
                         env.observation_space,
                         name=name,
-                        save_path = save_path)
+                        save_path=save_path)
 
     if load_path is not None:
         baseline.load(load_path)
@@ -59,11 +59,14 @@ if __name__ == "__main__":
     from grid2op import make
     from grid2op.Rules import AlwaysLegal
 
-    env = make("grid2op/data/rte_case14_redisp",
-               gamerules_class=AlwaysLegal)
+    from lightsim2grid.LightSimBackend import LightSimBackend
+    backend = LightSimBackend()
+    env = make("rte_case14_redisp",
+               gamerules_class=AlwaysLegal,
+               backend=backend)
 
-    res = train(env,
-            name="Geirina",
-            iterations=1,
-            load_path=None,
-            save_path="basline_result")
+    train(env,
+          name="Geirina",
+          iterations=1, # this is apparently not used !
+          load_path=None,  # this should be used in code
+          save_path="basline_result")
