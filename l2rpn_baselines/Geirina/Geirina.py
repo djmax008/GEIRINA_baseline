@@ -63,7 +63,7 @@ class Geirina(DoNothingAgent):
                  observation_space,
                  name,
                  save_path, 
-                 n_features= 414, #420,
+                 # n_features= 414, #420,
                  n_episode=1000,
                  learning_rate=1e-4,
                  gamma=0.99,
@@ -96,7 +96,7 @@ class Geirina(DoNothingAgent):
         self.line_count = [0 for i in range(20)]      
 
         # training params
-        self.n_features = n_features
+        self.n_features = np.sum(observation_space.shape)
         self.n_episode = n_episode
         self.learning_rate = learning_rate
         self.gamma = gamma
@@ -118,6 +118,8 @@ class Geirina(DoNothingAgent):
         self.epsilon_decay_steps = 3 * n_episode // 20
 
         # Directory
+        # if you provide that, make sure to clearly indicate it
+        # and to throw an error when it's not compatible with the environment used !
         self.data_dir = os.path.abspath(data_dir)
         action_to_index_dir = os.path.join(self.data_dir, 'action_to_index_jd1.npy')
         action_dir = os.path.join(self.data_dir, 'all_actions_jd1.npy')       

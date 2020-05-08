@@ -61,8 +61,12 @@ if __name__ == "__main__":
 
     from lightsim2grid.LightSimBackend import LightSimBackend
     backend = LightSimBackend()
-    env = make("rte_case14_redisp",
-               gamerules_class=AlwaysLegal,
+    # env = make("rte_case14_redisp",
+    #            # gamerules_class=AlwaysLegal,
+    #            backend=backend)
+
+    env = make("l2rpn_case14_sandbox",
+               # gamerules_class=AlwaysLegal,
                backend=backend)
 
     train(env,
