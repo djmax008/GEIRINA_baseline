@@ -63,8 +63,6 @@ class Geirina(DoNothingAgent):
                  observation_space,
                  name,
                  save_path, 
-                 # n_features= 414, #420,
-                 n_episode=1000,
                  learning_rate=1e-4,
                  gamma=0.99,
                  replace_target_iter=300,
@@ -72,7 +70,7 @@ class Geirina(DoNothingAgent):
                  PER_alpha=0.6,
                  PER_beta=0.4,
                  batch_size = 32,
-                 epsilon_start=1.0,
+                 epsilon_start=0.7,
                  epsilon_end=0.01,
                  verbose_per_episode=1,
                  seed=22,
@@ -97,7 +95,6 @@ class Geirina(DoNothingAgent):
 
         # training params
         self.n_features = np.sum(observation_space.shape)
-        self.n_episode = n_episode
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.replace_target_iter = replace_target_iter
@@ -115,7 +112,7 @@ class Geirina(DoNothingAgent):
         # control epsilon
         self.epsilon_start = epsilon_start
         self.epsilon_end = epsilon_end
-        self.epsilon_decay_steps = 3 * n_episode // 20
+        
 
         # Directory
         # if you provide that, make sure to clearly indicate it
@@ -151,7 +148,7 @@ class Geirina(DoNothingAgent):
           self.sess.run(tf.global_variables_initializer())
 
         # The replay memory
-        self.replay_memory = Memory(replay_memory_size, PER_alpha, PER_beta)
+        self.replay_memory = Memory(self.replay_memory_size, PER_alpha, PER_beta)
 
         # hard copy
         self.params_copy_hard = [target.assign(main) for main, target in zip(
@@ -159,10 +156,7 @@ class Geirina(DoNothingAgent):
 
         # summary
         self.timestamp = datetime.datetime.now().strftime('%m-%d-%H-%M')
-        self.episode_reward_history = [0] * self.n_episode
-        self.episode_score_history = [0] * self.n_episode
-        self.episode_tot_history = [0] * self.n_episode
-
+        self.episode_score_history = [0] 
 
 
     def action_transformation(self, action_array):
@@ -240,8 +234,6 @@ class Geirina(DoNothingAgent):
 
         return(state)
 
-
-
     def train(self, env,
               iterations,
               logdir = "logs-train", 
@@ -250,13 +242,11 @@ class Geirina(DoNothingAgent):
         self.env = env
 #        self.agent_action_space = self.env.action_space
         time_start = time.time()
+        self.epsilon_decay_steps = 3 * iterations // 150
         epsilons = np.append(np.linspace(self.epsilon_start, 0.2, int(self.epsilon_decay_steps/5)), np.linspace(0.19, self.epsilon_end, int(self.epsilon_decay_steps*4/5)))
-        count_simulate = [0] * self.n_episode
+        print(len(epsilons))
         count_action = {}
         
-
-        #initialize observation
-        self.observation = self.env.helper_observation(self.env)
 
         # session config
         config = tf.ConfigProto(log_device_placement=False,
@@ -271,24 +261,27 @@ class Geirina(DoNothingAgent):
         with tf.Session(config=config, graph=self.graph) as sess:
           sess.run(tf.global_variables_initializer())
           if self.restore:
-            self.saver.restore(sess, os.path.join(self.save_path , '{}.ckpt'.format(self.model_name)))
+            self.saver.restore(sess, (self.save_path + '/{}.ckpt'.format(self.model_name)))
 
           time_step = 0
           loss = 0
+          episode = 0
 
           print("Start training...")
           sys.stdout.flush()
 
           done = False
           flag_next_chronic = False
-
+          
 
           # start training for data in chronics
-          for episode in range(self.n_episode):
+          while time_step < iterations:
             self.id = set()
             self.id.clear()
 
             state = self.env.reset().to_vect()
+            #initialize observation
+            self.observation = self.env.helper_observation(self.env)
             obs = None
             state = [0 if i != i else i for i in state]
             state = np.array(state).reshape((-1, self.n_features))
@@ -297,18 +290,16 @@ class Geirina(DoNothingAgent):
 
             for step in itertools.count():
               reward_tot = 0
-              print("Epsilons is ", epsilons[min(episode, self.epsilon_decay_steps - 1)], epsilons[self.epsilon_decay_steps - 1] )
+              print("Epsilons is ", epsilons[min(time_step, self.epsilon_decay_steps - 1)], epsilons[self.epsilon_decay_steps - 1] )
               # update the target estimator
               if time_step % self.replace_target_iter == 0:
                 sess.run([self.params_copy_hard])
 
               self.action_next = np.zeros(76)
-
               if step >=1:             
                   #count the cooldown time for broken line
-                  #print("Broken_Line", lines_status_list_bool)
                   for i, v in enumerate(lines_status_list_bool):
-                    if not v:
+                    if v <= 0:
                       self.id.add(i)
                       line_count[i] +=1
                       if line_count[i] >10: line_count[i] = 10
@@ -335,7 +326,6 @@ class Geirina(DoNothingAgent):
 
                             self.action_next[56+self.line_map.index(idlist[0])] = 1.0
                             action = self.action_to_index.item().get(tuple(self.action_next)) 
-                            #print("@@@@@@@@@@", action)
                             self.id.clear()
                             line_count[i] = 0
                             break
@@ -344,9 +334,9 @@ class Geirina(DoNothingAgent):
               if 1.0 not in self.action_next or done_simulate:
                   # choose action
                   action, q_predictions = self.dqn_main.act(
-                      sess, self.normalize(state), epsilons[min(episode, self.epsilon_decay_steps - 1)])
+                      sess, self.normalize(state), epsilons[min(time_step, self.epsilon_decay_steps - 1)])
                   # guide to do nothning (action = 155)
-                  if np.random.uniform() > epsilons[min(episode, self.epsilon_decay_steps - 1)]: action = 155
+                  if np.random.uniform() > epsilons[min(time_step, self.epsilon_decay_steps - 1)]: action = 155
                   print("training action index", action)
                   # check loadflow
                   thermal_limits = np.abs(self.env.backend.get_thermal_limit())
@@ -375,7 +365,6 @@ class Geirina(DoNothingAgent):
                       print('has danger !!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
                     top_actions = np.argsort(q_predictions)[-1: -10: -1].tolist()
-
                     chosen_action = 155
                     max_score = float('-inf')
                     for action in tuple(top_actions):           
@@ -384,10 +373,11 @@ class Geirina(DoNothingAgent):
                       action_transf_dict = self.action_transformation(action_array)
                       action_is_legal = action_class_helper.legal_action(action_transf_dict, self.env)
                       if not action_is_legal:
+                        #print("illegal!!!")
                         continue
                       else:
                         obs_simulate, reward_simulate, done_simulate, _= self.observation.simulate(action_transf_dict)
-                      #print("simulate score", reward_simulate, action)
+                        #print("simulate score", reward_simulate, action)
                       if obs_simulate is None:
                         continue
                       else:
@@ -416,14 +406,14 @@ class Geirina(DoNothingAgent):
                   # take a step
                   action_array = self.action_space[action]
                   action_transf_dict = self.action_transformation(action_array)
-              print("applied action is ", action_transf_dict)              
+             # print("applied action is ", action_transf_dict)              
               obs, reward, done, infos = self.env.step(action_transf_dict)
-              print(obs.rho)
-              self.observation.update(self.env)
+              self.observation = obs
+              #self.observation.update(self.env)
 
              # record data
               next_state_dict = obs.to_dict()
-              lines_status_list_bool = next_state_dict["line_status"]
+              lines_status_list_bool = next_state_dict["rho"]
 
               state_list = [0 if i != i else i for i in self.env.get_obs().to_vect()] 
               if done:
@@ -447,9 +437,11 @@ class Geirina(DoNothingAgent):
               else:
                 self.replay_memory.store(
                       [self.normalize(state), action, reward_tot, self.normalize(next_state), done])
+                
 
               # learn
               if time_step > self.replay_memory_size and time_step % 5 == 0:
+                
               # Sample a minibatch from the replay memory
                 tree_idx, batch_samples, IS_weights = self.replay_memory.sample(self.batch_size)
                 states_batch, action_batch, reward_batch, next_states_batch, done_batch = map(
@@ -482,17 +474,21 @@ class Geirina(DoNothingAgent):
               time_step += 1
 
               #if done or time_step > total_train_step or flag_next_chronic:
-              if done: #  or step >= 6000:
+              if done: 
                 break
 
+            episode += 1
+            self.episode_score_history.append(0)
+
             # save model per episode
-            self.saver.save(sess, os.path.join(self.save_path, '{}_{}.ckpt'.format(self.model_name, self.timestamp)))
-            print('Model Saved!')
+            if episode >= 50:
+              self.saver.save(sess, os.path.join(self.save_path, '{}.ckpt'.format(self.model_name)))
+              print('Model Saved!')
 
             # verbose episode summary
             print("\nepisode: {}, mean_score: {:4f}, sum_score: {:4f}\n".
                       format(episode + 1, self.episode_score_history[episode] / (step + 1), self.episode_score_history[episode]))
-            print("simulate used count: {}\naction count: {}\n".format(count_simulate[episode], sorted(count_action.items())))
+            print("action count: {}\n".format(sorted(count_action.items())))
             with open("result_summary.csv", 'a',newline='') as f:
                 result = [episode + 1]
                 result.append(step+1)
@@ -503,7 +499,6 @@ class Geirina(DoNothingAgent):
           time_end = time.time()
           print("\nFinished, Total time used: {}s".format(time_end - time_start))
 
-
     def load(self, model_name):
       self.saver.restore(self.sess, os.path.join(self.save_path, '{}.ckpt'.format(model_name)))
       print('Model {} Loaded!'.format(model_name))
@@ -512,12 +507,11 @@ class Geirina(DoNothingAgent):
 
       #check line:
       state_dict = observation.to_dict()
-      lines_status_list_bool = state_dict["line_status"]   
+      lines_status_list_bool = state_dict["line_status"]  
+
       self.action_next = np.zeros(76)
-     
-     # print(state_dict["time_before_line_reconnectable"])   
-      for i, v in enumerate(lines_status_list_bool):
-        if not v:
+      for i, v in enumerate(state_dict['rho']):
+        if v <= 0:
           self.id.add(i)
           self.line_count[i] +=1
           if self.line_count[i] >10: self.line_count[i] = 10
@@ -561,7 +555,7 @@ class Geirina(DoNothingAgent):
         if reward_simulate is None or reward_simulate <= 0:
           has_danger = True
         elif obs_simulate is not None: 
-          has_overflow = any(obs_simulate.rho>1.0)
+          has_overflow = any(obs_simulate.rho>1.05)
 
         # if game over, run more simulation
         if done_simulate or reward_simulate is None or has_danger or has_overflow:
@@ -588,16 +582,16 @@ class Geirina(DoNothingAgent):
               # seperate big line and small line
               has_danger = False
               for ratio in lineflow_simulate_ratio:
-                if  ratio > 0.97:
+                if  ratio > 1.02:
                   has_danger = True
 
               if not done_simulate and reward_simulate > max_score and not has_danger:
                 max_score = reward_simulate
                 chosen_action = action
-              #print('current best action: {}, score: {:.4f}'.format(chosen_action, reward_simulate))
+                print('current best action: {}, score: {:.4f}'.format(chosen_action, reward_simulate))
 
           # chosen action
           action_array = self.action_space[chosen_action]
           action_transf_dict = self.action_transformation(action_array)
-        #print(reward,done,action_transf_dict)
+      #print(reward,done,action_transf_dict)
       return action_transf_dict

@@ -4,7 +4,7 @@ from l2rpn_baselines.Geirina.Geirina import Geirina
 
 def train(env,
           name="Geirina",
-          iterations=1,
+          iterations=1000000,
           save_path=None,
           load_path=None
           ):
@@ -61,16 +61,13 @@ if __name__ == "__main__":
 
     from lightsim2grid.LightSimBackend import LightSimBackend
     backend = LightSimBackend()
-    # env = make("rte_case14_redisp",
-    #            # gamerules_class=AlwaysLegal,
-    #            backend=backend)
 
-    env = make("l2rpn_case14_sandbox",
+    env = make("l2rpn_case14_sandbox"
                # gamerules_class=AlwaysLegal,
-               backend=backend)
+               #backend=backend
+               )
 
     train(env,
           name="Geirina",
-          iterations=1, # this is apparently not used !
-          load_path=None,  # this should be used in code
+          iterations=1000000, # this is apparently not used !
           save_path="basline_result")

@@ -96,8 +96,10 @@ class Memory(object):  # stored as ( s, a, r, s_ ) in SumTree
     # for later calculate ISweight
     # min_prob = np.min(self.tree.tree[-self.tree.capacity:]) / self.tree.total_p
     for i in range(n):
+      
       a, b = pri_seg * i, pri_seg * (i + 1)
-      v = np.random.uniform(a, b)
+      try: v = np.random.uniform(a, b)
+      except:v = np.random.uniform(b, a)
       idx, p, data = self.tree.get_leaf(v)
       prob = p / self.tree.total_p
       ISWeights.append(np.power(self.capacity * prob, -self.beta))

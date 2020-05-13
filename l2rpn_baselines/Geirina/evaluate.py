@@ -95,27 +95,31 @@ def evaluate(env,
         msg_tmp += "\t\t - number of time steps completed: {:.0f} / {:.0f}".format(nb_time_step, max_ts)
         print(msg_tmp)
 
-    if save_gif:
-        save_log_gif(save_path, res)
+    #if save_gif:
+    #    save_log_gif(save_path, res)
 
 
 if __name__ == "__main__":
     """
     This is a possible implementation of the eval script.
     """
-    from grid2op.MakeEnv import make, make2
-    import grid2op
-    from grid2op.VoltageControler import ControlVoltageFromFile
+    from grid2op import make
     from grid2op.Rules import AlwaysLegal
 
-    env = make2(dataset_path="grid2op/data/rte_case14_redisp", action_class=grid2op.Action.Action, volagecontroler_class=ControlVoltageFromFile, gamerules_class=AlwaysLegal)
+    from lightsim2grid.LightSimBackend import LightSimBackend
+    backend = LightSimBackend()
+
+    env = make("l2rpn_case14_sandbox"
+               # gamerules_class=AlwaysLegal,
+               #backend=backend
+               )
 
     evaluate(env,
-             model_name="_model_176_step_05-06-16-14",
+             model_name="geirina",
              save_path="basline_result",
              logs_path="logs-train",            
-             nb_episode=10,
+             nb_episode=1,
              nb_process=1,
-             max_steps=6000,
+             max_steps=1000,
              verbose=False,
              save_gif="basline_result")
