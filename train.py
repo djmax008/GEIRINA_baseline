@@ -72,7 +72,7 @@ if __name__ == "__main__":
                # gamerules_class=AlwaysLegal,
                #backend=backend
                )
-               
+
     train(env,
           name="Geirina",
           iterations=1000000, # this is apparently not used !
