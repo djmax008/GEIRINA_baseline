@@ -1,0 +1,9 @@
+{
+    "backend_type": "PandaPowerBackend_l2rpn_case14_sandbox_l2rpn_case14_sandbox_l2rpn_case14_sandbox",
+    "chronics_max_timestep": "1000",
+    "chronics_path": "/home/jiajun/data_grid2op/l2rpn_case14_sandbox/chronics/0000",
+    "cumulative_reward": 769390.5,
+    "env_type": "Environment_l2rpn_case14_sandbox",
+    "grid_path": "/home/jiajun/data_grid2op/l2rpn_case14_sandbox/grid.json",
+    "nb_timestep_played": 1000
+}

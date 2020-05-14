@@ -1,0 +1,2 @@
+model_checkpoint_path: "/home/jiajun/Desktop/git_basline/GEIRINA_baseline-bd_test/l2rpn_baselines/Geirina/basline_result/geirina.ckpt"
+all_model_checkpoint_paths: "/home/jiajun/Desktop/git_basline/GEIRINA_baseline-bd_test/l2rpn_baselines/Geirina/basline_result/geirina.ckpt"

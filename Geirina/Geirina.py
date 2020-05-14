@@ -71,13 +71,13 @@ class Geirina(DoNothingAgent):
                  PER_beta=0.4,
                  batch_size = 32,
                  epsilon_start=0.7,
-                 epsilon_end=0.01,
+                 epsilon_end=0.001,
                  verbose_per_episode=1,
                  seed=22,
                  verbose=False,
                  data_dir=".",
                  model_name="geirina",
-                 restore=False
+                 restore=True
                  ):
         DoNothingAgent.__init__(self, action_space)
         self.do_nothing = self.action_space()
@@ -159,14 +159,18 @@ class Geirina(DoNothingAgent):
         self.episode_score_history = [0] 
 
 
-    def action_transformation(self, action_array):
+    def action_transformation(self, action_array, name):
         # Transfer the l2rpn action array to a dict of grid2op
         action_dict = {}
         obj_id_dict = {}
 
-        #line_map = [0,1,7,8,9,10,11,15,16,17,14,13,12,18,19,3,2,4,5,6]
-        #load_map = [0,1,3,4,5,6,7,8,9,10,2]
-        self.line_map = [0,1,2,3,4,5,6,15,16,17,9,8,7,18,19,11,10,12,13,14]
+        if name == 'l2rpn_case14_sandbox':
+          self.line_map = [0,1,2,3,4,5,6,15,16,17,9,8,7,18,19,11,10,12,13,14]
+          load_map = [0,1,2,3,4,5,6,7,8,9,10]
+        else:
+          self.line_map = [0,1,7,8,9,10,11,15,16,17,14,13,12,18,19,3,2,4,5,6]
+          load_map = [0,1,3,4,5,6,7,8,9,10,2]
+
 
         # generator
         offset = 0
@@ -180,8 +184,8 @@ class Geirina(DoNothingAgent):
         switches_load_array = action_array[offset:offset+11]
         switch_load_id_list = list(np.where(switches_load_array == 1)[0])
         if switch_load_id_list:
-          #obj_id_dict["loads_id"] = [load_map[int(i)] for i in switch_load_id_list]
-          obj_id_dict["loads_id"] = [int(i) for i in switch_load_id_list]
+          obj_id_dict["loads_id"] = [load_map[int(i)] for i in switch_load_id_list]
+          #obj_id_dict["loads_id"] = [int(i) for i in switch_load_id_list]
 
         # line ox
         offset += 11
@@ -291,6 +295,7 @@ class Geirina(DoNothingAgent):
             for step in itertools.count():
               reward_tot = 0
               print("Epsilons is ", epsilons[min(time_step, self.epsilon_decay_steps - 1)], epsilons[self.epsilon_decay_steps - 1] )
+              
               # update the target estimator
               if time_step % self.replace_target_iter == 0:
                 sess.run([self.params_copy_hard])
@@ -346,7 +351,7 @@ class Geirina(DoNothingAgent):
                   has_danger = False
                   has_overflow = False              
                   action_array = self.action_space[action]
-                  action_transf_dict = self.action_transformation(action_array)
+                  action_transf_dict = self.action_transformation(action_array, self.env.name)
 
                   obs_simulate, reward_simulate, done_simulate, infor = self.observation.simulate(action_transf_dict)
                   #print("first simulate score", reward_simulate)
@@ -370,7 +375,7 @@ class Geirina(DoNothingAgent):
                     for action in tuple(top_actions):           
                       action_class_helper = self.env.helper_action_env
                       action_array = self.action_space[action]
-                      action_transf_dict = self.action_transformation(action_array)
+                      action_transf_dict = self.action_transformation(action_array, self.env.name)
                       action_is_legal = action_class_helper.legal_action(action_transf_dict, self.env)
                       if not action_is_legal:
                         #print("illegal!!!")
@@ -405,8 +410,8 @@ class Geirina(DoNothingAgent):
 
                   # take a step
                   action_array = self.action_space[action]
-                  action_transf_dict = self.action_transformation(action_array)
-             # print("applied action is ", action_transf_dict)              
+                  action_transf_dict = self.action_transformation(action_array, self.env.name)
+              #print("applied action is ", action_transf_dict)              
               obs, reward, done, infos = self.env.step(action_transf_dict)
               self.observation = obs
               #self.observation.update(self.env)
@@ -546,7 +551,7 @@ class Geirina(DoNothingAgent):
       if 1.0 not in self.action_next or done_simulate:
 
         action_array = self.action_space[155]
-        action_transf_dict = self.action_transformation(action_array)
+        action_transf_dict = self.action_transformation(action_array, self.env.name)
 
         obs_simulate, reward_simulate, done_simulate, infor = observation.simulate(action_transf_dict)
         #print("first simulate score", reward_simulate)
@@ -569,7 +574,7 @@ class Geirina(DoNothingAgent):
           for action in tuple(top_actions+[155]):           
 
             action_array = self.action_space[action]
-            action_transf_dict = self.action_transformation(action_array)
+            action_transf_dict = self.action_transformation(action_array, self.env.name)
             obs_simulate, reward_simulate, done_simulate, _= observation.simulate(action_transf_dict)
             #print("simulate score", reward_simulate, action)
             if obs_simulate is None:
@@ -592,6 +597,7 @@ class Geirina(DoNothingAgent):
 
           # chosen action
           action_array = self.action_space[chosen_action]
-          action_transf_dict = self.action_transformation(action_array)
+          action_transf_dict = self.action_transformation(action_array, self.env.name)
       #print(reward,done,action_transf_dict)
       return action_transf_dict
+
