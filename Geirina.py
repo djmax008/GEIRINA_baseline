@@ -77,7 +77,7 @@ class Geirina(DoNothingAgent):
                  verbose=False,
                  data_dir=".",
                  model_name="geirina",
-                 restore=True
+                 restore=False
                  ):
         DoNothingAgent.__init__(self, action_space)
         self.do_nothing = self.action_space()
@@ -167,6 +167,9 @@ class Geirina(DoNothingAgent):
         if name == 'l2rpn_case14_sandbox':
           self.line_map = [0,1,2,3,4,5,6,15,16,17,9,8,7,18,19,11,10,12,13,14]
           load_map = [0,1,2,3,4,5,6,7,8,9,10]
+        elif name == "l2rpn_2019":
+          self.line_map = [i for i in range(14)]
+          load_map = [0,1,2,3,4,5,6,7,8,9,10]          
         else:
           self.line_map = [0,1,7,8,9,10,11,15,16,17,14,13,12,18,19,3,2,4,5,6]
           load_map = [0,1,3,4,5,6,7,8,9,10,2]
