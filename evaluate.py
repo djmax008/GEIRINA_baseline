@@ -60,6 +60,12 @@ def evaluate(env,
     -------
     ``None``
     """
+
+    TEST_DEV_ENVS = ["l2rpn_case14_sandbox", "rte_case14_realistic", "rte_case14_redisp", 
+    "rte_case14_test", "case14_realistic", "case14_redisp","case14_test", "l2rpn_2019"] 
+    if env.name not in TEST_DEV_ENVS:
+        raise RuntimeError("This baseline only works for: {} ".format(TEST_DEV_ENVS)) 
+
     runner_params = env.get_params_for_runner()
     runner_params["verbose"] = verbose
 
@@ -109,16 +115,10 @@ if __name__ == "__main__":
     from lightsim2grid.LightSimBackend import LightSimBackend
     backend = LightSimBackend()
 
-    TEST_DEV_ENVS = ["l2rpn_case14_sandbox", "rte_case14_realistic", "rte_case14_redisp", 
-    "rte_case14_test", "case14_realistic", "case14_redisp","case14_test", "l2rpn_2019"] 
-
-
     env = make("l2rpn_case14_sandbox"
                # gamerules_class=AlwaysLegal,
                #backend=backend
                )
-    if env.name not in TEST_DEV_ENVS:
-        raise RuntimeError("This baseline only works for: {} ".format(TEST_DEV_ENVS)) 
 
     evaluate(env,
              model_name="geirina",
