@@ -312,7 +312,7 @@ class Geirina(DoNothingAgent):
                       self.id.add(i)
                       line_count[i] +=1
                       if line_count[i] >10: line_count[i] = 10
-                    if v:
+                    if v > 0:
                         try: 
                             line_count[i] = 0
                             self.id.remove(i)
@@ -524,7 +524,7 @@ class Geirina(DoNothingAgent):
           self.id.add(i)
           self.line_count[i] +=1
           if self.line_count[i] >10: self.line_count[i] = 10
-        if v:
+        if v > 0:
             try: 
                 self.line_count[i] = 0
                 self.id.remove(i)
