@@ -197,13 +197,14 @@ class Geirina(DoNothingAgent):
         offset += 20
         switches_lines_ex_array = action_array[offset:offset+20]
         switch_ex_id_list = list(np.where(switches_lines_ex_array == 1)[0])
-
-        if 14 in switch_or_id_list:
-          switch_or_id_list.remove(14)
-          switch_ex_id_list.append(14) 
-        elif 14 in switch_ex_id_list:
-          switch_ex_id_list.remove(14)
-          switch_or_id_list.append(14) 
+        
+        if name == 'l2rpn_case14_sandbox':
+          if 14 in switch_or_id_list:
+            switch_or_id_list.remove(14)
+            switch_ex_id_list.append(14) 
+          elif 14 in switch_ex_id_list:
+            switch_ex_id_list.remove(14)
+            switch_or_id_list.append(14) 
 
         if switch_or_id_list:
           obj_id_dict["lines_or_id"] = [self.line_map[int(i)] for i in switch_or_id_list]
