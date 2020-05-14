@@ -11,7 +11,7 @@ def train(env,
     """
     This an example function to train a baseline.
 
-    NB： This baaseline only works for IEEE14 bus system. For other systems, the agent should be modified accordingly.
+    NB： This baaseline only works for IEEE14 bus environment. For other environments, the agent should be modified accordingly.
 
     In order to be valid, if you chose (which is recommended) to provide a training script to help other retrain your
     baseline in different environments, or for longer period of time etc. This script should be contain the "train"
